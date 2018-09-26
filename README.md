@@ -1,3 +1,3 @@
 Execute `docker-compose up` to run openhab
 
-to restore config user `/openhab/runtime/bin/restore` from openhab container
+To restore config load the backup on `/backups` and the run `docker-compose run openhab /openhab/runtime/bin/restore /backups/[openhab2-backup].zip`
