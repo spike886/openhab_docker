@@ -1,10 +1,9 @@
-version: '3.4'
+version: '3.5'
 
 services:
   openhab:
     image: "openhab/openhab:2.3.0-amd64-debian"
     restart: always
-    network_mode: host
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -20,6 +19,8 @@ services:
       OPENHAB_HTTP_PORT: "8080"
       OPENHAB_HTTPS_PORT: "8443"
       EXTRA_JAVA_OPTS: "-Duser.timezone=America/Argentina/Buenos_Aires"
+    network_mode: host
+      
 
   frontail:
     image: "mthenw/frontail:4.2.2"
@@ -34,31 +35,34 @@ services:
 
   samba:
     image: "dperson/samba"
-    network_mode: "host"
+    restart: always
     volumes:
       - "openhab_addons:/openhab_addons"
       - "openhab_conf:/openhab_conf"
       - "openhab_userdata:/openhab_userdata"
       - "./smb.conf:/etc/samba/smb.conf"
+    ports:
+      - "139:139"
+      - "445:139"
     environment:
       - "NMBD=true"
       - "TZ=${DOCKER_TZ}"
       - "RECYCLE=False"
       - "USER=openhab;openhab"
-    restart: always
 
   mosquitto:
     image: "eclipse-mosquitto:1.4.12"
+    restart: always
     volumes:
       - "./mosquitto/:/mosquitto/config/"
       - "./mosquitto_passwd:/etc/mosquitto/passwd"
     ports:
       - "9001:9001"
       - "1883:1883"
-    restart: always
 
   grafana:
     image: "grafana/grafana:5.1.0"
+    restart: always
     ports:
       - "3000:3000"
     environment:
@@ -70,6 +74,7 @@ services:
 
   influxdb:
     image: "influxdb:1.6"
+    restart: always
     ports:
       - "8086:8086"
     volumes:
@@ -79,6 +84,24 @@ services:
       - "INFLUXDB_USER=openhab"
       - "INFLUXDB_USER_PASSWORD=openhab"
 
+  mysql:
+    image: "mysql:8.0"
+    restart: always
+    volumes:    
+      - "mysql-storage:/var/lib/mysql"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: openhab
+      MYSQL_USER: openhab
+      MYSQL_PASSWORD: openhab
+
+  test:
+    image: "arunvelsriram/utils"
+    restart: always
+    command: ["/bin/sleep", "1000"]
+    network_mode: host
+   
 
 volumes:
   openhab_addons:
@@ -90,4 +113,6 @@ volumes:
   grafana-storage:
     driver: local
   influxdb-storage:
+    driver: local
+  mysql-storage:
     driver: local
